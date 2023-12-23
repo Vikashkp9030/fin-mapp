@@ -55,7 +55,7 @@ class HomeScreen extends GetView<HomeController> {
                                           child: Divider(
                                             thickness: 4,
                                             color: idx <= controller.index
-                                                ? Colors.blue
+                                                ? Colors.green
                                                 : Colors.black45,
                                           ),
                                         ),
@@ -67,18 +67,15 @@ class HomeScreen extends GetView<HomeController> {
                             const SizedBox(
                               height: 16,
                             ),
-                            SizedBox(
-                                height: 600,
-                                child: SingleChildScrollView(
-                                    child: questionAnswer())),
+                            questionAnswer(),
                           ],
                         ),
-                        backAndNextButton(context),
                       ],
                     ),
                   ),
                 ),
               ),
+              bottomNavigationBar: backAndNextButton(context),
             ));
   }
 
@@ -282,65 +279,68 @@ class HomeScreen extends GetView<HomeController> {
   }
 
   Widget backAndNextButton(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        TextButton(
-            onPressed: () {
-              if (controller.index > 0) {
-                if (controller.index == 1) {
-                  controller.loadData();
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton(
+              onPressed: () {
+                if (controller.index > 0) {
+                  if (controller.index == 1) {
+                    controller.loadData();
+                  }
+                  controller.index--;
+                  controller.update();
                 }
-                controller.index--;
+              },
+              child: const Text(
+                '< Back',
+                style: TextStyle(color: Colors.black54),
+              )),
+          FloatingActionButton(
+            backgroundColor: Colors.deepOrangeAccent,
+            onPressed: () {
+              if (controller.questionModel.schema != null &&
+                  controller.questionModel.schema!.fields != null &&
+                  controller.questionModel.schema!.fields!.length - 1 >
+                      controller.index &&
+                  (controller.questionModel.schema?.fields?[controller.index]
+                              .type ==
+                          'Section' ||
+                      controller.questionModel.schema!.fields![controller.index]
+                              .schema!.answer !=
+                          null)) {
+                if (controller.questionModel.schema!.fields![controller.index]
+                        .schema!.answer ==
+                    'Balance transfer & Top-up') {
+                  controller.questionModel.schema!.fields!.removeWhere(
+                      (element) =>
+                          element.schema?.name ==
+                          'Existing bank where loan exists');
+                }
+                controller.index++;
                 controller.update();
+              } else if (controller.questionModel.schema!.fields!.length - 1 ==
+                  controller.index) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => AnswerScreen(
+                            questionModel: controller.questionModel,
+                          )),
+                ).then((value) => controller.loadData);
+              } else {
+                showSnackbar(context);
               }
             },
-            child: const Text(
-              '< Back',
-              style: TextStyle(color: Colors.black54),
-            )),
-        FloatingActionButton(
-          backgroundColor: Colors.deepOrangeAccent,
-          onPressed: () {
-            if (controller.questionModel.schema != null &&
-                controller.questionModel.schema!.fields != null &&
-                controller.questionModel.schema!.fields!.length - 1 >
-                    controller.index &&
-                (controller.questionModel.schema?.fields?[controller.index]
-                            .type ==
-                        'Section' ||
-                    controller.questionModel.schema!.fields![controller.index]
-                            .schema!.answer !=
-                        null)) {
-              if (controller.questionModel.schema!.fields![controller.index]
-                      .schema!.answer ==
-                  'Balance transfer & Top-up') {
-                controller.questionModel.schema!.fields!.removeWhere(
-                    (element) =>
-                        element.schema?.name ==
-                        'Existing bank where loan exists');
-              }
-              controller.index++;
-              controller.update();
-            } else if (controller.questionModel.schema!.fields!.length - 1 ==
-                controller.index) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => AnswerScreen(
-                          questionModel: controller.questionModel,
-                        )),
-              ).then((value) => controller.loadData);
-            } else {
-              showSnackbar(context);
-            }
-          },
-          child: const Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.white,
-          ),
-        )
-      ],
+            child: const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white,
+            ),
+          )
+        ],
+      ),
     );
   }
 
