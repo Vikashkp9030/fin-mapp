@@ -1,123 +1,105 @@
-import 'dart:convert';
-
+import 'package:fin_mapp/controller/home_controller.dart';
 import 'package:fin_mapp/model/question_model.dart';
 import 'package:fin_mapp/view/answer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-  });
+class HomeScreen extends GetView<HomeController> {
+  HomeScreen({super.key});
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  var questionModel = QuestionModel();
-  @override
-  void initState() {
-    super.initState();
-    loadData();
-  }
-
-  int index = -1;
-  Future<void> loadData() async {
-    String data =
-        await rootBundle.loadString('assets/json_file/Questions.json');
-    setState(() {
-      questionModel = QuestionModel.fromJson(json.decode(data));
-      if (questionModel.schema != null &&
-          questionModel.schema!.fields != null &&
-          questionModel.schema!.fields!.isNotEmpty) {
-        index = 0;
-      }
-    });
-  }
+  final controller = Get.put(HomeController());
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.82,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'About Loan',
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      if (index != questionModel.schema?.fields?.length)
-                        Row(
+    return GetBuilder(
+        init: controller,
+        builder: (_) => Scaffold(
+              body: SafeArea(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ...?questionModel.schema?.fields?.map(
-                              (e) {
-                                int idx = questionModel.schema?.fields
-                                        ?.indexWhere((element) =>
-                                            element.schema?.name ==
-                                            e.schema?.name) ??
-                                    -1;
-                                return Expanded(
-                                  child: Padding(
-                                    padding:
-                                        EdgeInsets.only(left: idx == 0 ? 0 : 8),
-                                    child: Divider(
-                                      thickness: 4,
-                                      color: idx <= index
-                                          ? Colors.blue
-                                          : Colors.black45,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ).toList()
+                            const Text(
+                              'About Loan',
+                              style: TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(
+                              height: 16,
+                            ),
+                            if (controller.index !=
+                                controller.questionModel.schema?.fields?.length)
+                              Row(
+                                children: [
+                                  ...?controller.questionModel.schema?.fields
+                                      ?.map(
+                                    (e) {
+                                      int idx = controller
+                                              .questionModel.schema?.fields
+                                              ?.indexWhere((element) =>
+                                                  element.schema?.name ==
+                                                  e.schema?.name) ??
+                                          -1;
+                                      return Expanded(
+                                        child: Padding(
+                                          padding: EdgeInsets.only(
+                                              left: idx == 0 ? 0 : 8),
+                                          child: Divider(
+                                            thickness: 4,
+                                            color: idx <= controller.index
+                                                ? Colors.blue
+                                                : Colors.black45,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ).toList()
+                                ],
+                              ),
+                            const SizedBox(
+                              height: 16,
+                            ),
+                            SizedBox(
+                                height: 600,
+                                child: SingleChildScrollView(
+                                    child: questionAnswer())),
                           ],
                         ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      SizedBox(
-                          height: 600,
-                          child:
-                              SingleChildScrollView(child: questionAnswer())),
-                    ],
+                        backAndNextButton(context),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const Spacer(),
-              backAndNextButton(),
-            ],
-          ),
-        ),
-      ),
-    );
+            ));
   }
 
   Widget questionAnswer() {
-    if (questionModel.schema?.fields?[index].type == 'Section') {
+    if (controller.questionModel.schema?.fields?[controller.index].type ==
+        'Section') {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
             Text(
-              '${index + 1}. ${questionModel.schema?.fields?[index].schema?.label}',
+              '${controller.index + 1}. ${controller.questionModel.schema?.fields?[controller.index].schema?.label}',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
-            ...?questionModel.schema?.fields?[index].schema?.fields?.map((e) {
+            ...?controller
+                .questionModel.schema?.fields?[controller.index].schema?.fields
+                ?.map((e) {
               if (e.type == 'SingleChoiceSelector' ||
                   e.type == 'SingleSelect') {
-                int idx = questionModel.schema?.fields?[index].schema?.fields
+                int idx = controller.questionModel.schema
+                        ?.fields?[controller.index].schema?.fields
                         ?.indexWhere((element) =>
                             element.schema?.label == e.schema?.label) ??
                     -1;
@@ -127,16 +109,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Text(
-                        '${index + 1}.${idx + 1}. ${e.schema?.label}',
+                        '${controller.index + 1}.${idx + 1}. ${e.schema?.label}',
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w500),
                       ),
                     ),
                     ...?e.schema?.options?.map((e1) => optionField(
                         data: e1,
-                        isSection: questionModel.schema?.fields?[index].type ==
+                        isSection: controller.questionModel.schema
+                                ?.fields?[controller.index].type ==
                             'Section',
-                        idx: questionModel.schema?.fields?[index].schema?.fields
+                        idx: controller.questionModel.schema
+                                ?.fields?[controller.index].schema?.fields
                                 ?.indexWhere((element) =>
                                     element.schema?.name == e.schema?.name) ??
                             -1)),
@@ -145,7 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               return numericField(
                   data: e,
-                  idx: questionModel.schema?.fields?[index].schema?.fields
+                  idx: controller.questionModel.schema
+                          ?.fields?[controller.index].schema?.fields
                           ?.indexWhere((element) =>
                               element.schema?.name == e.schema?.name) ??
                       -1);
@@ -160,13 +145,15 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${index + 1}. ${questionModel.schema?.fields?[index].schema?.label}',
+              '${controller.index + 1}. ${controller.questionModel.schema?.fields?[controller.index].schema?.label}',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
-            ...?questionModel.schema?.fields?[index].schema?.options?.map((e) =>
-                optionField(
+            ...?controller
+                .questionModel.schema?.fields?[controller.index].schema?.options
+                ?.map((e) => optionField(
                     data: e,
-                    idx: questionModel.schema?.fields?[index].schema?.options
+                    idx: controller.questionModel.schema
+                            ?.fields?[controller.index].schema?.options
                             ?.indexWhere((element) => element.key == e.key) ??
                         -1)),
           ],
@@ -182,15 +169,27 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(
           height: 16,
         ),
-        Text('${index + 1}.${idx + 1}. ${data.schema?.label}',
+        Text('${controller.index + 1}.${idx + 1}. ${data.schema?.label}',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
         const SizedBox(
           height: 16,
         ),
         TextFormField(
-          initialValue: questionModel
-              .schema!.fields![index].schema!.fields![idx].schema!.answer,
+          initialValue: controller.questionModel.schema!
+              .fields![controller.index].schema!.fields![idx].schema!.answer,
           cursorColor: Colors.deepOrangeAccent,
+          keyboardType: controller.questionModel.schema!
+                      .fields![controller.index].schema!.fields![idx].type ==
+                  'Numeric'
+              ? TextInputType.number
+              : TextInputType.text,
+          inputFormatters: controller.questionModel.schema!
+                      .fields![controller.index].schema!.fields![idx].type ==
+                  'Numeric'
+              ? [
+                  FilteringTextInputFormatter.digitsOnly,
+                ]
+              : null,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
@@ -201,8 +200,8 @@ class _HomeScreenState extends State<HomeScreen> {
             hintText: 'Answer',
           ),
           onChanged: (val) {
-            questionModel.schema!.fields![index].schema!.fields![idx].schema!
-                .answer = val;
+            controller.questionModel.schema!.fields![controller.index].schema!
+                .fields![idx].schema!.answer = val;
           },
         ),
       ],
@@ -216,11 +215,12 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         border: Border.all(
           color: (isSection &&
-                  questionModel.schema!.fields![index].schema!.fields![idx]
-                          .schema!.answer ==
+                  controller.questionModel.schema!.fields![controller.index]
+                          .schema!.fields![idx].schema!.answer ==
                       data.value)
               ? Colors.deepOrangeAccent
-              : questionModel.schema!.fields![index].schema!.answer ==
+              : controller.questionModel.schema!.fields![controller.index]
+                          .schema!.answer ==
                       data.value
                   ? Colors.deepOrangeAccent
                   : Colors.black26,
@@ -234,37 +234,36 @@ class _HomeScreenState extends State<HomeScreen> {
           toggleable: true,
           activeColor: Colors.deepOrangeAccent,
           groupValue: isSection
-              ? questionModel.schema!.fields![index].schema!.fields![idx]
-                      .schema!.answer ==
+              ? controller.questionModel.schema!.fields![controller.index]
+                      .schema!.fields![idx].schema!.answer ==
                   data.value
-              : questionModel.schema!.fields![index].schema!.answer ==
+              : controller.questionModel.schema!.fields![controller.index]
+                      .schema!.answer ==
                   data.value,
           onChanged: (bool? value) {
             if (isSection) {
-              if (questionModel.schema!.fields![index].schema!.fields![idx]
-                      .schema!.answer ==
+              if (controller.questionModel.schema!.fields![controller.index]
+                      .schema!.fields![idx].schema!.answer ==
                   data.value) {
-                setState(() {
-                  questionModel.schema!.fields![index].schema!.fields![idx]
-                      .schema!.answer = null;
-                });
+                controller.questionModel.schema!.fields![controller.index]
+                    .schema!.fields![idx].schema!.answer = null;
+                controller.update();
               } else {
-                setState(() {
-                  questionModel.schema!.fields![index].schema!.fields![idx]
-                      .schema!.answer = data.value;
-                });
+                controller.questionModel.schema!.fields![controller.index]
+                    .schema!.fields![idx].schema!.answer = data.value;
+                controller.update();
               }
             } else {
-              if (questionModel.schema!.fields![index].schema!.answer ==
+              if (controller.questionModel.schema!.fields![controller.index]
+                      .schema!.answer ==
                   data.value) {
-                setState(() {
-                  questionModel.schema!.fields![index].schema!.answer = null;
-                });
+                controller.questionModel.schema!.fields![controller.index]
+                    .schema!.answer = null;
+                controller.update();
               } else {
-                setState(() {
-                  questionModel.schema!.fields![index].schema!.answer =
-                      data.value;
-                });
+                controller.questionModel.schema!.fields![controller.index]
+                    .schema!.answer = data.value;
+                controller.update();
               }
             }
           },
@@ -272,7 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(
           data.value ?? '',
           style: TextStyle(
-              color: questionModel.schema!.fields![index].schema!.answer ==
+              color: controller.questionModel.schema!.fields![controller.index]
+                          .schema!.answer ==
                       data.value
                   ? Colors.deepOrangeAccent
                   : null),
@@ -281,19 +281,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget backAndNextButton() {
+  Widget backAndNextButton(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton(
             onPressed: () {
-              if (index > 0) {
-                setState(() {
-                  if (index == 1) {
-                    loadData();
-                  }
-                  index--;
-                });
+              if (controller.index > 0) {
+                if (controller.index == 1) {
+                  controller.loadData();
+                }
+                controller.index--;
+                controller.update();
               }
             },
             child: const Text(
@@ -303,29 +302,35 @@ class _HomeScreenState extends State<HomeScreen> {
         FloatingActionButton(
           backgroundColor: Colors.deepOrangeAccent,
           onPressed: () {
-            if (questionModel.schema != null &&
-                questionModel.schema!.fields != null &&
-                questionModel.schema!.fields!.length - 1 > index &&
-                (questionModel.schema?.fields?[index].type == 'Section' ||
-                    questionModel.schema!.fields![index].schema!.answer !=
+            if (controller.questionModel.schema != null &&
+                controller.questionModel.schema!.fields != null &&
+                controller.questionModel.schema!.fields!.length - 1 >
+                    controller.index &&
+                (controller.questionModel.schema?.fields?[controller.index]
+                            .type ==
+                        'Section' ||
+                    controller.questionModel.schema!.fields![controller.index]
+                            .schema!.answer !=
                         null)) {
-              setState(() {
-                if (questionModel.schema!.fields![index].schema!.answer ==
-                    'Balance transfer & Top-up') {
-                  questionModel.schema!.fields!.removeWhere((element) =>
-                      element.schema?.name ==
-                      'Existing bank where loan exists');
-                }
-                index++;
-              });
-            } else if (questionModel.schema!.fields!.length - 1 == index) {
+              if (controller.questionModel.schema!.fields![controller.index]
+                      .schema!.answer ==
+                  'Balance transfer & Top-up') {
+                controller.questionModel.schema!.fields!.removeWhere(
+                    (element) =>
+                        element.schema?.name ==
+                        'Existing bank where loan exists');
+              }
+              controller.index++;
+              controller.update();
+            } else if (controller.questionModel.schema!.fields!.length - 1 ==
+                controller.index) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => AnswerScreen(
-                          questionModel: questionModel,
+                          questionModel: controller.questionModel,
                         )),
-              ).then((value) => loadData);
+              ).then((value) => controller.loadData);
             } else {
               showSnackbar(context);
             }
